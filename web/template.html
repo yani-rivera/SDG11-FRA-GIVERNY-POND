@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Monet's Garden of Lilies</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Layout: one square stage, controls directly under it, credits last. Map clues fade as the painting takes over. */
+  --bg:#e9efe9; --ink:#1f2b26; --muted:#56655d; --rule:#c3cfc7; --pond:#3f6e63; --lily:#c98aa0;
+  --display:"Marcellus", Georgia, serif; --body:"Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#121a17; --ink:#e3ece7; --muted:#9db0a6; --rule:#2e3d36; --pond:#7fb5a6; --lily:#e3a9bd; color-scheme:dark; }}
+:root[data-theme="dark"]{ --bg:#121a17; --ink:#e3ece7; --muted:#9db0a6; --rule:#2e3d36; --pond:#7fb5a6; --lily:#e3a9bd; color-scheme:dark; }
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);display:flex;flex-direction:column;align-items:center;gap:14px;padding:18px 16px 28px}
+header{text-align:center;max-width:62ch}
+h1{font:400 clamp(26px,4.5vw,40px)/1.1 var(--display);margin:0;letter-spacing:.01em;text-wrap:balance}
+header p{margin:4px 0 0;color:var(--muted)}
+.stage{position:relative;width:min(92vw,72svh,760px);aspect-ratio:1/1;border-radius:6px;overflow:hidden;box-shadow:0 1px 0 var(--rule),0 10px 30px rgba(0,0,0,.18);background:var(--rule)}
+canvas{display:block;width:100%;height:100%}
+.clues{position:absolute;inset:0;pointer-events:none;transition:opacity .2s}
+.scale{position:absolute;left:12px;bottom:12px;color:#fff;font:600 12px var(--body);text-shadow:0 1px 2px rgba(0,0,0,.8)}
+.scale .bar{height:6px;border:2px solid #fff;border-top:0;box-shadow:0 1px 2px rgba(0,0,0,.6);margin-top:2px}
+.north{position:absolute;right:12px;top:12px;width:34px;text-align:center;color:#fff;font:600 13px var(--body);text-shadow:0 1px 2px rgba(0,0,0,.8)}
+.north svg{display:block;margin:0 auto;filter:drop-shadow(0 1px 1px rgba(0,0,0,.7))}
+.locator{position:absolute;right:10px;bottom:10px;background:rgba(255,255,255,.85);border-radius:4px;padding:3px}
+.locator path{fill:#cfd8d2;stroke:#5a6b62;stroke-width:.8}
+.locator circle{fill:var(--lily);stroke:#fff;stroke-width:1.5}
+.label{position:absolute;left:12px;top:12px;color:#fff;font:600 13px var(--body);text-shadow:0 1px 2px rgba(0,0,0,.8);transition:opacity .2s}
+.controls{width:min(92vw,72svh,760px);display:grid;grid-template-columns:auto 1fr;gap:8px 14px;align-items:center}
+button{font:600 15px var(--body);color:var(--bg);background:var(--pond);border:0;border-radius:999px;padding:0 18px;min-height:44px;min-width:104px;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--lily);outline-offset:2px}
+input[type=range]{width:100%;accent-color:var(--pond);min-height:44px}
+.ends{grid-column:2;display:flex;justify-content:space-between;color:var(--muted);font-size:13px;margin-top:-10px}
+.steps{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
+.steps button{background:transparent;color:var(--ink);border:1px solid var(--rule);min-width:0;font-weight:400}
+.caption{width:min(92vw,72svh,760px);color:var(--muted);font-size:14px}
+.caption b{color:var(--ink);font-weight:600}
+footer{width:min(92vw,72svh,760px);font-size:12px;color:var(--muted);border-top:1px solid var(--rule);padding-top:10px}
+footer p{margin:4px 0}
+@media (prefers-reduced-motion: reduce){.clues,.label{transition:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title"></h1>
+  <p id="question"></p>
+</header>
+
+<div class="stage" id="stage">
+  <canvas id="cv" role="img" aria-label="The lily pond at Giverny seen from above, changing square by square into Monet's painting of it"></canvas>
+  <div class="label" id="label">Giverny, from above</div>
+  <div class="clues" id="clues">
+    <div class="north" aria-hidden="true"><svg width="20" height="28" viewBox="0 0 20 28" id="northsvg"><path d="M10 0 L18 26 L10 20 L2 26 Z" fill="#fff"/></svg>N</div>
+    <div class="scale" id="scale"><span id="scaletxt"></span><div class="bar" id="scalebar"></div></div>
+    <div class="locator" id="locator"></div>
+  </div>
+</div>
+
+<div class="controls">
+  <button id="play" aria-pressed="false">Play</button>
+  <input type="range" id="t" min="0" max="1000" value="0" aria-label="From aerial photo to painting">
+  <div class="ends" aria-hidden="true"><span>Aerial photo</span><span>Painting</span></div>
+  <div class="steps" role="group" aria-label="Jump to">
+    <button data-t="0">Photo</button><button data-t="500">Halfway</button><button data-t="1000">Painting</button>
+  </div>
+</div>
+
+<p class="caption" id="caption"></p>
+
+<footer id="credits"></footer>
+
+<script>
+const D = /*__DATA__*/null;
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+$("title").textContent = D.title;
+$("question").textContent = D.question + " The lily pond at Giverny, seen from above and as Monet painted it.";
+$("credits").innerHTML = `<p>${esc(D.credits.aerial)}.</p><p>${esc(D.credits.painting)}.</p><p>Locator: ${esc(D.credits.locator)}. Centre ${D.center[1].toFixed(5)}° N, ${D.center[0].toFixed(5)}° E. v${esc(D.version)}</p>`;
+const L = D.locator;
+$("locator").innerHTML = `<svg width="${L.w*0.6}" height="${L.h*0.6}" viewBox="0 0 ${L.w} ${L.h}" aria-hidden="true"><path d="${L.d}"/><circle cx="${L.x}" cy="${L.y}" r="5"/></svg>`;
+$("northsvg").style.transform = `rotate(${-D.north_offset}deg)`;
+
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const cv = $("cv"), ctx = cv.getContext("2d");
+const N = D.grid;
+let A, P, avgA, avgP, thr, t = 0, playing = false, dir = 1, raf = null, last = 0;
+
+function load(src){ return new Promise((ok, bad) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => bad(src); i.src = src; }); }
+
+function averages(img){
+  const c = document.createElement("canvas"); c.width = c.height = N;
+  const x = c.getContext("2d"); x.imageSmoothingQuality = "high"; x.drawImage(img, 0, 0, N, N);
+  return x.getImageData(0, 0, N, N).data;
+}
+
+// flip order: a ripple outward from the lily water, broken up with noise (seeded, so it is the same every visit)
+function thresholds(){
+  let s = 25; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  const a = new Float32Array(N*N), cx = N*0.5, cy = N*0.55, maxd = Math.hypot(N, N) / 2;
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++)
+    a[j*N+i] = 0.62 * Math.hypot(i + .5 - cx, j + .5 - cy) / maxd + 0.38 * rnd();
+  let mn = Infinity, mx = -Infinity; a.forEach(v => { mn = Math.min(mn, v); mx = Math.max(mx, v); });
+  return a.map(v => 0.04 + 0.92 * (v - mn) / (mx - mn));
+}
+
+function size(){
+  const r = cv.getBoundingClientRect(), dpr = Math.min(devicePixelRatio || 1, 2);
+  cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
+  const barPx = r.width * (10 / D.side_m);           // 10 m bar
+  $("scalebar").style.width = barPx + "px"; $("scaletxt").textContent = "10 m";
+  draw();
+}
+
+function draw(){
+  if (!A) return;
+  const W = cv.width, cs = W / N, sw = A.naturalWidth / N, band = 0.05;
+  ctx.imageSmoothingEnabled = true;
+  if (reduce){
+    ctx.globalAlpha = 1; ctx.drawImage(A, 0, 0, W, W);
+    ctx.globalAlpha = t; ctx.drawImage(P, 0, 0, W, W); ctx.globalAlpha = 1;
+  } else {
+    ctx.drawImage(A, 0, 0, W, W);
+    for (let k = 0; k < N*N; k++){
+      const d = t - thr[k];
+      if (d < -band) continue;
+      const i = k % N, j = (k / N) | 0, x = Math.floor(i*cs), y = Math.floor(j*cs), s = Math.ceil(cs) + 1;
+      if (d >= band){ ctx.drawImage(P, i*sw, j*sw, sw, sw, x, y, s, s); continue; }
+      // in the change: one flat colour, blending from the photo's to the painting's
+      const m = (d + band) / (2*band), o = k*4;
+      const r = avgA[o] + (avgP[o]-avgA[o])*m, g = avgA[o+1] + (avgP[o+1]-avgA[o+1])*m, b = avgA[o+2] + (avgP[o+2]-avgA[o+2])*m;
+      ctx.fillStyle = `rgb(${r|0},${g|0},${b|0})`; ctx.fillRect(x, y, s, s);
+    }
+  }
+  const clue = Math.max(0, 1 - t * 1.6);
+  $("clues").style.opacity = clue;
+  $("label").textContent = t < 0.5 ? "Giverny, from above" : "Monet, from the bank";
+  $("label").style.opacity = t < 0.02 || t > 0.98 ? 1 : 0.85;
+  $("caption").innerHTML = t < 0.05
+    ? `<b>The pond today, from above.</b> IGN aerial photo, 20 cm per pixel. The dark water is dotted with lily pads; willows and trees crowd the banks.`
+    : t > 0.95
+    ? `<b>The same pond, painted in 1899.</b> Monet looked across the water to the Japanese footbridge he had built. The map clues are gone: no north, no scale. Is it still a map?`
+    : `<b>Halfway between.</b> Each square is either the photo or the painting. The flat squares are changing over.`;
+  $("t").value = Math.round(t * 1000);
+}
+
+function tick(now){
+  if (!playing) return;
+  const dt = Math.min(0.05, (now - (last || now)) / 1000); last = now;
+  t = Math.min(1, Math.max(0, t + dir * dt / 6));
+  draw();
+  if ((dir > 0 && t >= 1) || (dir < 0 && t <= 0)){ stop(); dir = -dir; return; }
+  raf = requestAnimationFrame(tick);
+}
+function stop(){ playing = false; cancelAnimationFrame(raf); last = 0; $("play").textContent = t >= 1 ? "Back to photo" : "Play"; $("play").setAttribute("aria-pressed","false"); }
+function start(){ if (t >= 1) dir = -1; else if (t <= 0) dir = 1; playing = true; $("play").textContent = "Pause"; $("play").setAttribute("aria-pressed","true"); raf = requestAnimationFrame(tick); }
+
+$("play").addEventListener("click", () => playing ? stop() : start());
+$("t").addEventListener("input", e => { stop(); t = e.target.value / 1000; draw(); $("play").textContent = t >= 1 ? "Back to photo" : "Play"; });
+document.querySelectorAll(".steps button").forEach(b => b.addEventListener("click", () => { stop(); t = +b.dataset.t / 1000; draw(); $("play").textContent = t >= 1 ? "Back to photo" : "Play"; }));
+if (reduce) $("play").textContent = "Fade";
+
+let lastW = 0;
+new ResizeObserver(() => { const w = cv.getBoundingClientRect().width; if (Math.abs(w - lastW) > 1){ lastW = w; size(); } }).observe(cv);
+
+Promise.all([load("aerial.jpg"), load("painting.jpg")]).then(([a, p]) => {
+  A = a; P = p; avgA = averages(A); avgP = averages(P); thr = thresholds(); size();
+}).catch(err => {
+  const secure = err && err.name === "SecurityError";
+  $("caption").innerHTML = secure
+    ? "<b>The browser blocked reading the images.</b> This happens when an older copy of the page is opened from a file. Use the latest index.html, or open it through GitHub Pages."
+    : "<b>The images did not load.</b> Reload the page.";
+});
+</script>
+</body>
+</html>

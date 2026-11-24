@@ -1,0 +1,65 @@
+{
+  "project": "monet_pond_interactive",
+  "script_version": "1.0.2",
+  "run_utc": "2026-11-23T23:06:44+00:00",
+  "python": "3.13.18",
+  "inputs": {
+    "aerial_tif": {
+      "path": "data/monetpond.tif",
+      "sha256": "bd0e473f117acf20950fa529a5c40582e4a88d4a1ad726793c091e53f9a33df0"
+    },
+    "painting": {
+      "path": "data/NG4240_water_lily_pond.jpg",
+      "sha256": "3d32a84a6fa903a9ed545eab10ee901fb81ba54554fb556b4addae715add4875"
+    },
+    "countries_gpkg": {
+      "path": "data/ne_countries.gpkg",
+      "sha256": "f8738d2aa66ec9f2d98eb4bbfaecf07f4771115e27740116d273dc9b8d5fde22"
+    }
+  },
+  "outputs": {
+    "aerial": {
+      "path": "out/aerial.jpg",
+      "sha256": "2e956f0929eb020563e1a78009f8a7d93681e9699081e6cd0f9ab787f173ef42"
+    },
+    "painting": {
+      "path": "out/painting.jpg",
+      "sha256": "5d864943a2e3cb412752c7bfe4508712e5ee905be8a7a7367c5965084e6a1abd"
+    },
+    "page": {
+      "path": "out/index.html",
+      "sha256": "2535f9cb63b7390befce07226a5d23f862490abe2d81e83cd716a9ee59559ce9"
+    }
+  },
+  "notes": {
+    "aerial": {
+      "source_crs": "EPSG:8857",
+      "crs": "EPSG:2154",
+      "bounds_l93": [
+        592869.2385979217,
+        6887021.1242696615,
+        592925.8885979217,
+        6887077.774269662
+      ],
+      "side_m": 56.65,
+      "center_lonlat": [
+        1.534106,
+        49.074349
+      ],
+      "grid_north_offset_deg": -1.06,
+      "native_resolution_m": 0.2
+    },
+    "painting": {
+      "source_px": [
+        1600,
+        1552
+      ],
+      "crop_box": [
+        24,
+        0,
+        1576,
+        1552
+      ]
+    }
+  }
+}

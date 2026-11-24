@@ -1,0 +1,30 @@
+project: monet_pond_interactive
+version: "1.0.2"
+title: "Monet's Garden of Lilies"
+question: "Is this a map?"
+
+inputs:
+  aerial_tif: data/monetpond.tif           # IGN Ortho 20 cm export from QGIS (EPSG:8857)
+  painting: data/NG4240_water_lily_pond.jpg
+  countries_gpkg: data/ne_countries.gpkg
+  countries_layer: ne_50m_admin_0_countries_copy
+
+aerial:
+  target_crs: "EPSG:2154"     # Lambert-93: conformal, true shape and scale for the scale bar
+  resolution_m: 0.05          # resampling grid (source detail is 0.20 m)
+  crop_center_frac: [0.58, 0.47]   # x, y of the square crop centre as a fraction of the reprojected image (lily water)
+  crop_side_frac: 0.86        # side of the square crop as a fraction of the image height
+
+output_px: 1200               # both images are written as 1200 x 1200 JPEGs
+jpeg_quality: 82
+
+grid_cells: 40                # cells per side for the pixel change
+
+credits:
+  aerial: "Aerial photo © IGN, BD ORTHO (Ortho 20 cm, HR.ORTHOIMAGERY.ORTHOPHOTOS), Licence Ouverte Etalab 2.0"
+  painting: "Claude Monet, The Water-Lily Pond, 1899. Oil on canvas, 88.3 × 93.1 cm. The National Gallery, London (NG4240). Image © The National Gallery, London, non-commercial Creative Commons use"
+  locator: "Natural Earth (public domain)"
+
+outputs:
+  dir: out
+  encoding: utf-8-sig
